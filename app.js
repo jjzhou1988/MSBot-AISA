@@ -112,7 +112,7 @@ var addUtterance = (config,jsonUtterance) => {
         console.log(repos);
         });
 
-        //console.log("Add utterance done");
+        console.log("Add utterance done");
 
     } catch (err) {
         console.log(`Error adding utterance:  ${err.message} `);
@@ -163,7 +163,7 @@ function luis_query(session, ser_type, expr)
     .then(function (repos) {
         console.log(repos);
         var record = repos['topScoringIntent'];
-        //console.log('User has %d repos', Object.keys(record).length);
+        console.log('User has %d repos', Object.keys(record).length);
         Object.keys(record).forEach(function(key)
         {
             console.log('Key : ' + key + ', Value : ' + record[key]);
@@ -200,10 +200,10 @@ bot.dialog('techinfo', [
     },
     
     function (session,results,next) {
-        //console.log("session.message.text : %s", session.message.text);
+        console.log("session.message.text : %s", session.message.text);
         
         console.log('enter tech water fall func#2');
-        //console.log("results.response : %s ; session.message.text : %s", results.response, session.message.text);
+        console.log("results.response : %s ; session.message.text : %s", results.response, session.message.text);
         
         if (session.conversationData.stage == 2)
         {
@@ -218,10 +218,10 @@ bot.dialog('techinfo', [
     },
 
     function (session,results,next) {
-        //console.log("session.message.text : %s", session.message.text);
+        console.log("session.message.text : %s", session.message.text);
         
         console.log('enter tech water fall func#3');
-        //console.log("results.response : %s ; session.message.text : %s", results.response, session.message.text);
+        console.log("results.response : %s ; session.message.text : %s", results.response, session.message.text);
         
         console.log("stage %d",session.conversationData.stage);
         console.log("session.conversationData.intent %s",session.conversationData.intent);
@@ -248,10 +248,10 @@ bot.dialog('techinfo', [
     },
     
     function (session,results,next) {
-        //console.log("session.message.text : %s", session.message.text);
+        console.log("session.message.text : %s", session.message.text);
         
         console.log('enter tech water fall func#4');
-        //console.log("results.response : %s ; session.message.text : %s", results.response, session.message.text);        
+        console.log("results.response : %s ; session.message.text : %s", results.response, session.message.text);        
         console.log("stage %d",session.conversationData.stage);
         if (session.conversationData.stage == 4)
         {
@@ -329,10 +329,10 @@ bot.dialog('techinfo', [
     },    
     
     function (session,results,next) {
-        //console.log("session.message.text : %s", session.message.text);
-        //console.log("results.response : %s", results.response);
+        console.log("session.message.text : %s", session.message.text);
+        console.log("results.response : %s", results.response);
         console.log('enter tech water fall func#5');
-        //console.log("results.response : %s ; session.message.text : %s", results.response, session.message.text);
+        console.log("results.response : %s ; session.message.text : %s", results.response, session.message.text);
         
         if (session.conversationData.stage == 5)
         {
@@ -388,18 +388,21 @@ function data_query(session, ser_type, ser_key){
     .then(function (repos) {
         
         if(ser_type=='teaminfo')
-        {
-            if(repos.length == 1)
+        {   
+            console.log("TeamInfo : Responses got from data query : %s", JSON.stringify(repos));
+            var record = repos['recordset'];
+            console.log('%d results matched', record.length);
+            if(record.length == 1)
+
             {
-                //console.log(repos);
-                var record = repos[0];
-                //console.log('User has %d repos', Object.keys(record).length);
-                Object.keys(record).forEach(function(key)
+                var matched = record[0];
+                console.log('User has %d items', Object.keys(matched).length);
+                Object.keys(matched).forEach(function(key)
                 {
-                    //console.log('Key : ' + key + ', Value : ' + record[key]);
+                    console.log('Key : ' + key + ', Value : ' + matched[key]);
                 });
                 
-                session.conversationData.teamInfoData[ser_key] = record;
+                session.conversationData.teamInfoData[ser_key] = matched;
                 session.conversationData.stage = 3;
             }
             else
@@ -540,8 +543,8 @@ bot.dialog('teaminfo', [
         }
     },
     function (session,results,next) {
-        //console.log("session.message.text : %s", session.message.text);
-        //console.log("results.response : %s", results.response);
+        console.log("session.message.text : %s", session.message.text);
+        console.log("results.response : %s", results.response);
         console.log('enter teaminfo water fall func#2');
         console.log('session.conversationData.stage : %d',session.conversationData.stage);
         
