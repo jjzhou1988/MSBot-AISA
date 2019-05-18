@@ -454,7 +454,7 @@ bot.dialog('greetings', [
         else
         {
             console.log('enter greetings water fall func#1');
-            var title = "A.I.S.A is at your service!" ;
+            var title = "A.I.S.A is at your service~" ;
             var text = "Please choose the service you need. Type 'help' if any assistance is required.";
             var msg = new builder.Message(session);  
             msg.attachments([
