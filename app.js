@@ -54,7 +54,7 @@ bot.use(stripBotAtMentions);
 var count = 0;
 var helpMsg = "Help message: <br>1. Please follow the hints and you will get what you want <br>2. Type quit to start over <br>3. Contact jinjiez@microsoft.com and ashhu@microsoft.com for the query";
 //var helpMsg="1. Please follow the hints and you will get what you want <br>2. Type quit to start over <br>3. Contact jinjiez@microsoft.com and ashhu@microsoft.com for the query";
-var dataServicePoint = 'https://cssadvisoryapiapp-staging.azurewebsites.net';
+var dataServicePoint = 'https://cssadvisoryapiapp.azurewebsites.net';
 var luisEndpoint = 'https://westus.api.cognitive.microsoft.com/luis/v2.0/apps/2c8a694d-30b9-4203-a0f2-5d03815ccea4?subscription-key=c82d1549c7f145ceb7d832468201575d&verbose=true&timezoneOffset=0&q=';
 var servicesType = ['teaminfo', 'techinfo'];
 
@@ -107,7 +107,10 @@ function generateHtmlTeamDetail(jsonContent) {
 
             var entries = jsonContent[item].split(';');
             entries.forEach(element => {
-                result += `<li> ${element} </li>`;
+                if (element != "") {
+                    result += `<li> ${element} </li>`;
+                }
+
             });
             result += "</ul>";
         }
@@ -355,13 +358,6 @@ bot.dialog('techinfo', [
 ]);
 
 function data_query(session, ser_type, ser_key) {
-    /*
-    if(ser_key in session.conversationData.teamInfoData)
-    {
-        console.log("The info for %s already exists ", ser_key);
-        return;
-    }
-    */
     console.log("enter data query func#");
     var uri = dataServicePoint + '/' + ser_type_querystr[ser_type] + '/' + encodeURIComponent(ser_key);
     console.log("uri : %s", uri);
@@ -379,19 +375,9 @@ function data_query(session, ser_type, ser_key) {
 
             if (ser_type == 'teaminfo') {
                 console.log("TeamInfo : Responses got from data query : %s", JSON.stringify(repos));
-                var records = repos['recordset'];
+                var records = repos;
                 console.log('%d results matched', records.length);
                 if (records.length >= 1) {
-                    /*
-                    var matched = records[0];
-                    console.log('User has %d items', Object.keys(matched).length);
-                    Object.keys(matched).forEach(function(key)
-                    {
-                        console.log('Key : ' + key + ', Value : ' + matched[key]);
-                    });
-                
-                    session.conversationData.teamInfoData[ser_key] = matched;
-                    */
                     session.conversationData.teamInfoData[ser_key] = records;
                     session.conversationData.stage = 3;
                 } else {
@@ -651,42 +637,3 @@ function fake_query(ser_type, ser_key) {
     }
     return null;
 }
-
-
-
-
-/*
-// Make sure you add code to validate these fields
-var luisAppId = process.env.LuisAppId;
-var luisAPIKey = process.env.LuisAPIKey;
-var luisAPIHostName = process.env.LuisAPIHostName || 'westus.api.cognitive.microsoft.com';
-
-const LuisModelUrl = 'https://' + luisAPIHostName + '/luis/v1/application?id=' + luisAppId + '&subscription-key=' + luisAPIKey;
-
-// Main dialog with LUIS
-var recognizer = new builder.LuisRecognizer(LuisModelUrl);
-var intents = new builder.IntentDialog({ recognizers: [recognizer] })
-.matches('Greeting', (session) => {
-    session.send('You reached Greeting intent, you said \'%s\'.', session.message.text);
-})
-.matches('Help', (session) => {
-    session.send('You reached Help intent, you said \'%s\'.', session.message.text);
-})
-.matches('Cancel', (session) => {
-    session.send('You reached Cancel intent, you said \'%s\'.', session.message.text);
-})
-.matches('BookFlight', (session) => {
-    session.send('You reached BookFlight intent, you said \'%s\'.', session.message.text);
-})
-/*
-.matches('<yourIntent>')... See details at http://docs.botframework.com/builder/node/guides/understanding-natural-language/
-*/
-/*
-.onDefault((session) => {
-    session.send('Sorry, I did not understand \'%s\'.', session.message.text);
-});
-
-
-bot.dialog('/', intents);    
-
-*/
