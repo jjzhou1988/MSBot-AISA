@@ -52,7 +52,7 @@ var stripBotAtMentions = new teams.StripBotAtMentions();
 bot.use(stripBotAtMentions);
 
 var count = 0;
-var helpMsg = "Help message: <br>1. Please follow the hints and you will get what you want <br>2. Type quit to start over <br>3. Contact jinjiez@microsoft.com and ashhu@microsoft.com for the query";
+var helpMsg = "Help message: <br>1. Please follow the hints and you will get what you want <br>2. Type quit to start over <br>3. Contact jinjiez@microsoft.com for the query";
 //var helpMsg="1. Please follow the hints and you will get what you want <br>2. Type quit to start over <br>3. Contact jinjiez@microsoft.com and ashhu@microsoft.com for the query";
 var dataServicePoint = 'https://cssadvisoryapiapp.azurewebsites.net';
 var luisEndpoint = 'https://westus.api.cognitive.microsoft.com/luis/v2.0/apps/2c8a694d-30b9-4203-a0f2-5d03815ccea4?subscription-key=c82d1549c7f145ceb7d832468201575d&verbose=true&timezoneOffset=0&q=';
