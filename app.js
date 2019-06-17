@@ -513,7 +513,7 @@ bot.dialog('teaminfo', [
         if (session.conversationData.stage >= 3) {
             next();
         } else {
-            var key = session.conversationData.currentKey = session.message.text;
+            var key = session.conversationData.currentKey = session.message.text.trim();
 
             if (session.conversationData.stage == 1) {
                 /*key=results.response;*/
