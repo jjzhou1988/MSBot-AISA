@@ -56,7 +56,7 @@ var helpMsg = "Help message: <br>1. Please follow the hints and you will get wha
 //var helpMsg="1. Please follow the hints and you will get what you want <br>2. Type quit to start over <br>3. Contact jinjiez@microsoft.com and ashhu@microsoft.com for the query";
 var dataServicePoint = 'https://cssadvisoryapiapp.azurewebsites.net';
 var luisEndpoint = 'https://westus.api.cognitive.microsoft.com/luis/v2.0/apps/2c8a694d-30b9-4203-a0f2-5d03815ccea4?subscription-key=c82d1549c7f145ceb7d832468201575d&verbose=true&timezoneOffset=0&q=';
-var servicesType = ['teaminfo', 'techinfo'];
+var servicesType = ['teaminfo', 'techinfo','newfeature'];
 
 // Authoring key, available in luis.ai under Account Settings
 var LUIS_authoringKey = "c82d1549c7f145ceb7d832468201575d";
@@ -118,245 +118,6 @@ function generateHtmlTeamDetail(jsonContent) {
     return result;
 }
 
-var addUtterance = (config, jsonUtterance) => {
-    try {
-        // Add an utterance
-        rq({
-            uri: config.uri,
-            method: 'POST',
-            headers: {
-                'Ocp-Apim-Subscription-Key': config.LUIS_authoringKey
-            },
-            json: true,
-            body: jsonUtterance
-        }).then(function(repos) {
-            console.log("Add utterance returned");
-            console.log(repos);
-        });
-
-        console.log("Add utterance done");
-
-    } catch (err) {
-        console.log(`Error adding utterance:  ${err.message} `);
-        //throw err;
-    }
-}
-
-bot.dialog('test', [
-        function(session) {
-
-            console.log("testing");
-
-            rq('https://westus.api.cognitive.microsoft.com/luis/v2.0/apps/2c8a694d-30b9-4203-a0f2-5d03815ccea4?subscription-key=c82d1549c7f145ceb7d832468201575d&verbose=true&timezoneOffset=0&q=/123')
-                .then(function(repos) {
-                    console.log(repos);
-                })
-                .catch(function(err) {
-                    // Crawling failed...
-                });
-
-            luis_query(session, 'tech', 'call cannot be routed to call queue');
-            luis_query(session, 'tech', '12345678');
-        }
-    ])
-    .triggerAction({
-        matches: /^test$/i,
-        onSelectAction: (session, args, next) => {
-            // Add the test dialog to the dialog stack 
-            // (override the default behavior of replacing the stack)
-            session.beginDialog(args.action, args);
-        }
-    });
-
-function luis_query(session, ser_type, expr) {
-    console.log("enter LUIS query func#");
-    var uri = luisEndpoint + encodeURIComponent(expr);
-    console.log("uri : %s", uri);
-    var options = {
-        uri: uri,
-        headers: {
-            'User-Agent': 'Request-Promise'
-        },
-        simple: false,
-        json: true // Automatically parses the JSON string in the response
-    };
-    rq(options)
-        .then(function(repos) {
-            console.log(repos);
-            var record = repos['topScoringIntent'];
-            console.log('User has %d repos', Object.keys(record).length);
-            Object.keys(record).forEach(function(key) {
-                console.log('Key : ' + key + ', Value : ' + record[key]);
-            });
-            session.conversationData.stage++;
-            session.conversationData.intent = record['intent'];
-            session.beginDialog(ser_type, {
-                intent: record['intent']
-            });
-        })
-        .catch(function(err) {
-            // Crawling failed...
-        });
-}
-
-bot.dialog('techinfo', [
-    function(session, args, next) {
-        console.log('enter tech water fall func#1');
-        console.log('session.conversationData.stage : %d', session.conversationData.stage);
-        //session.send(args);
-        if (session.conversationData.stage == 1) {
-            builder.Prompts.text(session, "Please describe the issue you are facing.");
-            session.conversationData.stage++;
-        } else if (session.conversationData.stage >= 2 && session.conversationData.stage <= 5) {
-            next();
-        } else {
-            console.log("sth wrong !  \n session.conversationData.stage = %d ", session.conversationData.stage);
-        }
-    },
-
-    function(session, results, next) {
-        console.log("session.message.text : %s", session.message.text);
-
-        console.log('enter tech water fall func#2');
-        console.log("results.response : %s ; session.message.text : %s", results.response, session.message.text);
-
-        if (session.conversationData.stage == 2) {
-            session.conversationData.techDescription = session.message.text;
-            luis_query(session, "techinfo", session.message.text);
-            session.endDialog();
-        } else {
-            next();
-        }
-    },
-
-    function(session, results, next) {
-        console.log("session.message.text : %s", session.message.text);
-
-        console.log('enter tech water fall func#3');
-        console.log("results.response : %s ; session.message.text : %s", results.response, session.message.text);
-
-        console.log("stage %d", session.conversationData.stage);
-        console.log("session.conversationData.intent %s", session.conversationData.intent);
-        if (session.conversationData.stage == 3) {
-            if (session.conversationData.intent == 'None') {
-                session.send("Sorry, we don't understand the description. Please try describing it with another method");
-                session.conversationData.stage = 2;
-            } else {
-                //data_query(session, 'techinfo', 'skype'); //for test as REST API not ready
-                console.log("dataquery");
-                data_query(session, "techinfo", session.conversationData.intent);
-                session.conversationData.stage++;
-                session.endDialog();
-            }
-        } else {
-            next();
-        }
-    },
-
-    function(session, results, next) {
-        console.log("session.message.text : %s", session.message.text);
-
-        console.log('enter tech water fall func#4');
-        console.log("results.response : %s ; session.message.text : %s", results.response, session.message.text);
-        console.log("stage %d", session.conversationData.stage);
-        if (session.conversationData.stage == 4) {
-            var records = session.conversationData.techref;
-
-            var msg = new builder.Message(session);
-            var cards = new Array();
-            console.log(records);
-            //let suggestionTxt="";
-
-            records.forEach(function(record, index) {
-                //suggestionTxt += (" <br> <a href=\"" + record['Suggestion'] +"\">" + record['Suggestion'] +"</a>") ;
-                var imagePath;
-                if (record['Techsuggestion'].startsWith('onenote')) {
-                    imagePath = oneNoteImageUrl;
-                } else {
-                    imagePath = wikiImageUrl;
-                }
-
-                console.log(imagePath);
-
-                cards.push(
-                    new builder.ThumbnailCard(session)
-                    .title(`Suggestion# ${index+1}`)
-                    .text(`<a href="${record['Techsuggestion']}">${record['Techsuggestion']}</a>`)
-                    /*
-                    .buttons([
-                        builder.CardAction.openUrl(session, record['Suggestion'], 'Open')
-                        ])
-                        */
-                    .images([
-                        builder.CardImage.create(session, imagePath)
-                    ])
-                );
-
-                //suggestionTxt+=`<a href="${record['Suggestion']}">Suggestion# ${index+1}</a> <br>`;
-            });
-
-            var record0 = records[0]; //get record0 to fetch support team info and PG team info as all the records contain the same info for this
-            var result = `<h2> Support Team </h2> ${record0['TeamName']} (Search in <b>TeamInfo</b> for more details) <br> <h2> PG Contact </h2> ${record0['PGTeam']} `;
-
-            cards.push(
-                new builder.ThumbnailCard(session)
-                .title('You may also contact...')
-                .text(result)
-            );
-
-            msg.attachments(cards);
-            session.send(msg);
-
-            //session.send(suggestionTxt);
-
-            var title = "Is that what you need?";
-            var msg = new builder.Message(session);
-            msg.attachments([
-                new builder.ThumbnailCard(session)
-                .title(title)
-                .buttons([
-                    builder.CardAction.messageBack(session, '', 'Yes')
-                    .text('Yes'),
-                    builder.CardAction.messageBack(session, '', 'No')
-                    .text('No'),
-                ])
-            ]);
-            session.send(msg);
-            session.conversationData.stage++;
-        } else {
-            next();
-        }
-    },
-
-    function(session, results, next) {
-        console.log("session.message.text : %s", session.message.text);
-        console.log("results.response : %s", results.response);
-        console.log('enter tech water fall func#5');
-        console.log("results.response : %s ; session.message.text : %s", results.response, session.message.text);
-
-        if (session.conversationData.stage == 5) {
-            var res = session.message.text;
-            if (res == 'Yes') {
-                var jsonstr = constructJsonUtterance(session.conversationData.techDescription, session.conversationData.intent);
-                console.log("jsonstr : %s", jsonstr);
-                addUtterance(configAddUtterance, jsonstr);
-                session.send("Thank you for your feedback! Have a nice day");
-                session.endConversation("Quit Conversation");
-            } else {
-                console.log('Not a good answer, retry = %d', session.conversationData.retry);
-                if (session.conversationData.retry < 3) {
-                    session.conversationData.retry++;
-                    session.conversationData.stage = 2;
-                    session.send("Please try describing it in another way");
-                } else {
-                    session.send("Sorry, I am not able to provide you with the technical references you want. Please try later as I'm keeping improving myself. For now, please try to get the team contact for the consulting");
-                    session.endConversation("Quit Conversation");
-                }
-            }
-        }
-    }
-]);
-
 function data_query(session, ser_type, ser_key) {
     console.log("enter data query func#");
     var uri = dataServicePoint + '/' + ser_type_querystr[ser_type] + '/' + encodeURIComponent(ser_key);
@@ -394,7 +155,6 @@ function data_query(session, ser_type, ser_key) {
         .catch(function(err) {
             // Crawling failed...
         });
-
 }
 
 
@@ -435,8 +195,8 @@ bot.dialog('greetings', [
                 .buttons([
                     builder.CardAction.messageBack(session, '', 'Team Contacts')
                     .text('teaminfo'),
-                    builder.CardAction.messageBack(session, '', 'Technical Reference')
-                    .text('techinfo'),
+                    builder.CardAction.messageBack(session, '', 'New Features(comming soon)')
+                    .text('newfeature'),
                 ])
             ]);
             session.send(msg);
@@ -624,6 +384,15 @@ bot.dialog('postback', [
         }
     });
 
+    bot.dialog('newfeature', [
+        function(session) {
+            console.log('enter new feature');
+            session.send("More features are coming!!!<br /> Please contact jinjiez@microsoft.com if you have any ideas or suggestions.").endDialog();
+            session.endConversation();
+        }
+    ]);
+
+/*
 function fake_query(ser_type, ser_key) {
     console.log("enter fake query func#");
     if (ser_type == "teaminfo") {
@@ -637,3 +406,247 @@ function fake_query(ser_type, ser_key) {
     }
     return null;
 }
+*/
+
+
+/*
+var addUtterance = (config, jsonUtterance) => {
+    try {
+        // Add an utterance
+        rq({
+            uri: config.uri,
+            method: 'POST',
+            headers: {
+                'Ocp-Apim-Subscription-Key': config.LUIS_authoringKey
+            },
+            json: true,
+            body: jsonUtterance
+        }).then(function(repos) {
+            console.log("Add utterance returned");
+            console.log(repos);
+        });
+
+        console.log("Add utterance done");
+
+    } catch (err) {
+        console.log(`Error adding utterance:  ${err.message} `);
+        //throw err;
+    }
+}
+*/
+
+/*
+bot.dialog('test', [
+        function(session) {
+
+            console.log("testing");
+
+            rq('https://westus.api.cognitive.microsoft.com/luis/v2.0/apps/2c8a694d-30b9-4203-a0f2-5d03815ccea4?subscription-key=c82d1549c7f145ceb7d832468201575d&verbose=true&timezoneOffset=0&q=/123')
+                .then(function(repos) {
+                    console.log(repos);
+                })
+                .catch(function(err) {
+                    // Crawling failed...
+                });
+
+            luis_query(session, 'tech', 'call cannot be routed to call queue');
+            luis_query(session, 'tech', '12345678');
+        }
+    ])
+    .triggerAction({
+        matches: /^test$/i,
+        onSelectAction: (session, args, next) => {
+            // Add the test dialog to the dialog stack 
+            // (override the default behavior of replacing the stack)
+            session.beginDialog(args.action, args);
+        }
+    });
+*/
+
+/*
+function luis_query(session, ser_type, expr) {
+    console.log("enter LUIS query func#");
+    var uri = luisEndpoint + encodeURIComponent(expr);
+    console.log("uri : %s", uri);
+    var options = {
+        uri: uri,
+        headers: {
+            'User-Agent': 'Request-Promise'
+        },
+        simple: false,
+        json: true // Automatically parses the JSON string in the response
+    };
+    rq(options)
+        .then(function(repos) {
+            console.log(repos);
+            var record = repos['topScoringIntent'];
+            console.log('User has %d repos', Object.keys(record).length);
+            Object.keys(record).forEach(function(key) {
+                console.log('Key : ' + key + ', Value : ' + record[key]);
+            });
+            session.conversationData.stage++;
+            session.conversationData.intent = record['intent'];
+            session.beginDialog(ser_type, {
+                intent: record['intent']
+            });
+        })
+        .catch(function(err) {
+            // Crawling failed...
+        });
+}
+*/
+
+/*
+bot.dialog('techinfo', [
+    function(session, args, next) {
+        console.log('enter tech water fall func#1');
+        console.log('session.conversationData.stage : %d', session.conversationData.stage);
+        //session.send(args);
+        if (session.conversationData.stage == 1) {
+            builder.Prompts.text(session, "Please describe the issue you are facing.");
+            session.conversationData.stage++;
+        } else if (session.conversationData.stage >= 2 && session.conversationData.stage <= 5) {
+            next();
+        } else {
+            console.log("sth wrong !  \n session.conversationData.stage = %d ", session.conversationData.stage);
+        }
+    },
+
+    function(session, results, next) {
+        console.log("session.message.text : %s", session.message.text);
+
+        console.log('enter tech water fall func#2');
+        console.log("results.response : %s ; session.message.text : %s", results.response, session.message.text);
+
+        if (session.conversationData.stage == 2) {
+            session.conversationData.techDescription = session.message.text;
+            luis_query(session, "techinfo", session.message.text);
+            session.endDialog();
+        } else {
+            next();
+        }
+    },
+
+    function(session, results, next) {
+        console.log("session.message.text : %s", session.message.text);
+
+        console.log('enter tech water fall func#3');
+        console.log("results.response : %s ; session.message.text : %s", results.response, session.message.text);
+
+        console.log("stage %d", session.conversationData.stage);
+        console.log("session.conversationData.intent %s", session.conversationData.intent);
+        if (session.conversationData.stage == 3) {
+            if (session.conversationData.intent == 'None') {
+                session.send("Sorry, we don't understand the description. Please try describing it with another method");
+                session.conversationData.stage = 2;
+            } else {
+                //data_query(session, 'techinfo', 'skype'); //for test as REST API not ready
+                console.log("dataquery");
+                data_query(session, "techinfo", session.conversationData.intent);
+                session.conversationData.stage++;
+                session.endDialog();
+            }
+        } else {
+            next();
+        }
+    },
+
+    function(session, results, next) {
+        console.log("session.message.text : %s", session.message.text);
+
+        console.log('enter tech water fall func#4');
+        console.log("results.response : %s ; session.message.text : %s", results.response, session.message.text);
+        console.log("stage %d", session.conversationData.stage);
+        if (session.conversationData.stage == 4) {
+            var records = session.conversationData.techref;
+
+            var msg = new builder.Message(session);
+            var cards = new Array();
+            console.log(records);
+            //let suggestionTxt="";
+
+            records.forEach(function(record, index) {
+                //suggestionTxt += (" <br> <a href=\"" + record['Suggestion'] +"\">" + record['Suggestion'] +"</a>") ;
+                var imagePath;
+                if (record['Techsuggestion'].startsWith('onenote')) {
+                    imagePath = oneNoteImageUrl;
+                } else {
+                    imagePath = wikiImageUrl;
+                }
+
+                console.log(imagePath);
+
+                cards.push(
+                    new builder.ThumbnailCard(session)
+                    .title(`Suggestion# ${index+1}`)
+                    .text(`<a href="${record['Techsuggestion']}">${record['Techsuggestion']}</a>`)
+                    .images([
+                        builder.CardImage.create(session, imagePath)
+                    ])
+                );
+
+                //suggestionTxt+=`<a href="${record['Suggestion']}">Suggestion# ${index+1}</a> <br>`;
+            });
+
+            var record0 = records[0]; //get record0 to fetch support team info and PG team info as all the records contain the same info for this
+            var result = `<h2> Support Team </h2> ${record0['TeamName']} (Search in <b>TeamInfo</b> for more details) <br> <h2> PG Contact </h2> ${record0['PGTeam']} `;
+
+            cards.push(
+                new builder.ThumbnailCard(session)
+                .title('You may also contact...')
+                .text(result)
+            );
+
+            msg.attachments(cards);
+            session.send(msg);
+
+            //session.send(suggestionTxt);
+
+            var title = "Is that what you need?";
+            var msg = new builder.Message(session);
+            msg.attachments([
+                new builder.ThumbnailCard(session)
+                .title(title)
+                .buttons([
+                    builder.CardAction.messageBack(session, '', 'Yes')
+                    .text('Yes'),
+                    builder.CardAction.messageBack(session, '', 'No')
+                    .text('No'),
+                ])
+            ]);
+            session.send(msg);
+            session.conversationData.stage++;
+        } else {
+            next();
+        }
+    },
+
+    function(session, results, next) {
+        console.log("session.message.text : %s", session.message.text);
+        console.log("results.response : %s", results.response);
+        console.log('enter tech water fall func#5');
+        console.log("results.response : %s ; session.message.text : %s", results.response, session.message.text);
+
+        if (session.conversationData.stage == 5) {
+            var res = session.message.text;
+            if (res == 'Yes') {
+                var jsonstr = constructJsonUtterance(session.conversationData.techDescription, session.conversationData.intent);
+                console.log("jsonstr : %s", jsonstr);
+                addUtterance(configAddUtterance, jsonstr);
+                session.send("Thank you for your feedback! Have a nice day");
+                session.endConversation("Quit Conversation");
+            } else {
+                console.log('Not a good answer, retry = %d', session.conversationData.retry);
+                if (session.conversationData.retry < 3) {
+                    session.conversationData.retry++;
+                    session.conversationData.stage = 2;
+                    session.send("Please try describing it in another way");
+                } else {
+                    session.send("Sorry, I am not able to provide you with the technical references you want. Please try later as I'm keeping improving myself. For now, please try to get the team contact for the consulting");
+                    session.endConversation("Quit Conversation");
+                }
+            }
+        }
+    }
+]);
+*/
