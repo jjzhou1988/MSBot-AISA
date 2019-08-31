@@ -300,17 +300,15 @@ bot.dialog('teaminfo', [
         if (session.conversationData.stage == 3) {
             var key = session.conversationData.currentKey;
             var records = session.conversationData.teamInfoData[key];
-
             var msg = new builder.Message(session);
-
             var cards = [];
-
+            
             records.forEach(function(item, index) {
                 var jsonContent = item;
                 console.log('index : %d ; jsonContent : %s', index, JSON.stringify(jsonContent));
 
                 var htmlText = generateHtmlTeamDetail(jsonContent);
-
+                
                 cards.push(
                     new builder.HeroCard(session)
                     .title("Team : " + jsonContent["TeamName"])
@@ -319,10 +317,20 @@ bot.dialog('teaminfo', [
                 )
             });
             msg.attachments(cards);
-            session.conversationData.stage = 1;
             session.send(msg);
-            session.endDialog();
-            session.endConversation();
+            
+            var cnt_matched = Object.keys(records).length;
+            var output_str = `${cnt_matched} results matched! `;
+            if (cnt_matched > 5)
+            {   
+                output_str += " Seems the keyword you typed is too general... ";
+            }
+            session.send("<b>" + output_str + "</b>");
+            session.send("<b> Any other team you want to look up? </b>");
+            
+            session.conversationData.stage = 2; 
+            session.conversationData.teamInfoData={};
+            
         } else {
             next();
         }
@@ -332,6 +340,12 @@ bot.dialog('teaminfo', [
         console.log('session.conversationData.stage : %d', session.conversationData.stage);
         if (session.conversationData.stage == 4) {
             console.log('wrong team info provided = %d', session.conversationData.retry);
+            session.send("I don't know this team, can you try again with some other key words？");
+            
+            session.conversationData.stage = 2;
+            session.conversationData.teamInfoData={};
+            
+            /*
             if (session.conversationData.retry < 3) {
                 session.conversationData.retry++;
                 session.conversationData.stage = 2;
@@ -343,6 +357,7 @@ bot.dialog('teaminfo', [
                 session.send("Sorry, I cannot find the team you want to contact, please verify your input is correct");
                 session.endConversation("Quit Conversation");
             }
+            */
         }
     }
 ]);
