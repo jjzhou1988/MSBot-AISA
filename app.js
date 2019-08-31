@@ -84,7 +84,7 @@ var configAddUtterance = {
     uri: "https://westus.api.cognitive.microsoft.com/luis/api/v2.0/apps/{appId}/versions/{versionId}/examples".replace("{appId}", LUIS_appId).replace("{versionId}", LUIS_versionId)
 };
 
-var ravesd_help_msg = "What do you want to know about RAVE&SD? <br />" +
+var ravesd_help_msg = "What do you want to know about RAVE&SD?<br />" +
              "<b>1.Case Tansfer Process <br />" +
              "2.Collaboration KB <br />" +
              "3.How to transfer <br />" + 
@@ -435,25 +435,23 @@ bot.dialog('postback', [
             }
             console.log('key : %s', key);
             console.log('session.conversationData.stage : %d', session.conversationData.stage);
-
             switch(key){
                 case '1':
-                    session.send(read_content('transferprocess'));
+                    session.send(read_content('transferprocess').toString());
                     break;
                 case '2':
-                    session.send(read_content('collaborationkb'));
+                    session.send(read_content('collaborationkb').toString());
                     break;
                 case '3':
-                    session.send(read_content('howtotransfer'));
+                    session.send(read_content('howtotransfer').toString());
                     break;
                 case '4':
-                    session.send(read_content('issuetrack'));
+                    session.send(read_content('issuetrack').toString());
                     break;
                 default:
-                    session.send("Sorry, I cannot understand. Please choose with index (eg. 1 or 2)");
+                    session.send("Sorry, I cannot understand. Please choose with the index (eg. 1, 2, 3, 4).  To exit, please type 'quit' ");
+                    session.send(ravesd_help_msg);
             }
-
-            session.send(ravesd_help_msg);
         }
     ]);
 
@@ -461,6 +459,7 @@ function read_content(content_name) {
     console.log("enter read content func#");
     var fs = require("fs");
     var contents = fs.readFileSync(`Contents/${content_name}`);
+    console.log('contents : %s',contents)
     return contents;
 }
 
