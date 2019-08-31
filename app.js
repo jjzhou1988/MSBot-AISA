@@ -56,7 +56,7 @@ var helpMsg = "Help message: <br>1. Please follow the hints and you will get wha
 //var helpMsg="1. Please follow the hints and you will get what you want <br>2. Type quit to start over <br>3. Contact jinjiez@microsoft.com and ashhu@microsoft.com for the query";
 var dataServicePoint = 'https://cssadvisoryapiapp.azurewebsites.net';
 var luisEndpoint = 'https://westus.api.cognitive.microsoft.com/luis/v2.0/apps/2c8a694d-30b9-4203-a0f2-5d03815ccea4?subscription-key=c82d1549c7f145ceb7d832468201575d&verbose=true&timezoneOffset=0&q=';
-var servicesType = ['teaminfo', 'techinfo','newfeature'];
+var servicesType = ['teaminfo', 'techinfo','ravesd'];
 
 // Authoring key, available in luis.ai under Account Settings
 var LUIS_authoringKey = "c82d1549c7f145ceb7d832468201575d";
@@ -83,6 +83,14 @@ var configAddUtterance = {
     LUIS_versionId: LUIS_versionId,
     uri: "https://westus.api.cognitive.microsoft.com/luis/api/v2.0/apps/{appId}/versions/{versionId}/examples".replace("{appId}", LUIS_appId).replace("{versionId}", LUIS_versionId)
 };
+
+var ravesd_help_msg = "What do you want to know about RAVE&SD? <br />" +
+             "<b>1.Case Tansfer Process <br />" +
+             "2.Collaboration KB <br />" +
+             "3.How to transfer <br />" + 
+             "4.Issue Track </b> <br />" +
+             "Please choose:";
+
 
 function constructJsonUtterance(text, intent) {
     var jsonstr = [{
@@ -195,8 +203,8 @@ bot.dialog('greetings', [
                 .buttons([
                     builder.CardAction.messageBack(session, '', 'Team Contacts')
                     .text('teaminfo'),
-                    builder.CardAction.messageBack(session, '', 'New Features(comming soon)')
-                    .text('newfeature'),
+                    builder.CardAction.messageBack(session, '', 'Rave <-> SD Collaboration')
+                    .text('ravesd'),
                 ])
             ]);
             session.send(msg);
@@ -399,13 +407,62 @@ bot.dialog('postback', [
         }
     });
 
-    bot.dialog('newfeature', [
-        function(session) {
-            console.log('enter new feature');
-            session.send("More features are coming!!!<br /> Please contact jinjiez@microsoft.com if you have any ideas or suggestions.").endDialog();
-            session.endConversation();
+    bot.dialog('ravesd', [
+        function(session,results, next) {
+            console.log('enter ravesd');
+            session.sendTyping();
+            
+            if(session.conversationData.stage == 1)
+            {
+                builder.Prompts.text(session, ravesd_help_msg);
+            }
+            else
+            {
+                next();
+            }
+        },
+        function(session, results, next) {
+            console.log("session.message.text : %s", session.message.text);
+            console.log("results.response : %s", results.response);
+            console.log('enter ravesd water fall func#2');
+            console.log('session.conversationData.stage : %d', session.conversationData.stage);
+    
+            var key = session.message.text.trim();
+    
+            if (session.conversationData.stage == 1) {
+                /*key=results.response;*/
+                session.conversationData.stage++;
+            }
+            console.log('key : %s', key);
+            console.log('session.conversationData.stage : %d', session.conversationData.stage);
+
+            switch(key){
+                case '1':
+                    session.send(read_content('transferprocess'));
+                    break;
+                case '2':
+                    session.send(read_content('collaborationkb'));
+                    break;
+                case '3':
+                    session.send(read_content('howtotransfer'));
+                    break;
+                case '4':
+                    session.send(read_content('issuetrack'));
+                    break;
+                default:
+                    session.send("Sorry, I cannot understand. Please choose with index (eg. 1 or 2)");
+            }
+
+            session.send(ravesd_help_msg);
         }
     ]);
+
+function read_content(content_name) {
+    console.log("enter read content func#");
+    var fs = require("fs");
+    var contents = fs.readFileSync(`Contents/${content_name}`);
+    return contents;
+}
 
 /*
 function fake_query(ser_type, ser_key) {

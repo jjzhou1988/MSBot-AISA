@@ -1,0 +1,17 @@
+<b>To transfer case from SD to Rave, please find the SAP mapping as below:</b> <br /> 
+
+<ul>
+<li>Sharepoint OnPrem: Servers/Sharepoint</li>
+<li>Sharepoint Online: Office product/Sharepoint Online</li>
+<li>Cloud Identity: Office Products/Office 365/Office 365 Identity Management</li>
+<li>Exchange OnPrem: Servers/Exchange Server</li>
+<li>Exchange Online: Office Products/Exchange Online</li>
+<li>Intune: Azure/Intune</li>
+<li>OneDrive for Business Sync Client: Office Products/SharePoint Online/OneDrive for Business</li>
+<li>Outlook: Office Products/Outlook</li>
+<li>Project Online: Office Products/SharePoint Online/Project Online</li>
+<li>Security & Compliance: Office Products/Office 365/Office 365 Security & Compliance Center</li>
+<li>Skype for Business Server: Servers/Lync Server</li>
+<li>Skype Online: Office product/Skype Online</li>
+<li>Yammer: Office Products/Yammer/Accounts</li>
+</ul>
